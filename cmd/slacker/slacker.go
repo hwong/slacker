@@ -3,40 +3,17 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
-	"io/ioutil"
-
-	"github.com/nlopes/slack"
-	"github.com/spf13/viper"
+	"github.com/hwong/slacker"
 )
 
 func main() {
-	viper.SetConfigName("slacker")
-	viper.AddConfigPath("$HOME/.slacker")
-	viper.AddConfigPath(".slacker")
-	viper.AddConfigPath(".")
-	viper.SetEnvPrefix("SLACKER")
-	viper.BindEnv("API_KEY")
-	viper.BindEnv("CHANNEL_ID")
-
-	err := viper.ReadInConfig()
+	config, err := slacker.GetConfig()
 	if err != nil {
-		fmt.Printf("Error reading config: %v\n.", err)
-		return
-	}
-
-	apiKey := viper.GetString("API_KEY")
-	if apiKey == "" {
-		fmt.Println("Missing $SLACKER_API_KEY.")
-		return
-	}
-
-	channelID := viper.GetString("CHANNEL_ID")
-	if channelID == "" {
-		fmt.Println("Missing $SLACKER_CHANNEL_ID.")
-		return
+		panic(err)
 	}
 
 	message := strings.Join(os.Args[1:], " ")
@@ -50,12 +27,6 @@ func main() {
 		message = string(read)
 	}
 
-	api := slack.New(apiKey)
-	_, _, err = api.PostMessage(channelID, message, slack.PostMessageParameters{})
-	if err != nil {
-		fmt.Printf("Error posting message to Slack: %v\n", err)
-		return
-	}
-
+	slacker.Post(config, message)
 	fmt.Println(message)
 }
